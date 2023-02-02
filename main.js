@@ -3,7 +3,7 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 
-let url = 'https://azon.market/faktor-krolika-(id-2291492)';
+let url = '';
 
 (async () => {
     const browser = await puppeteer.launch({headless:false});

@@ -29,27 +29,33 @@ function downloadImage(url, imageName, sequenceNumber, folderPath) {
 }
 
 (async () => {
-    const pathToUrls = await readline.question('Path to XLSX document containing URLs: ');
-    const urls = getLinks(pathToUrls)
+    try {
+        const pathToUrls = await readline.question('Path to XLSX document containing URLs: ');
+        const urls = getLinks(pathToUrls);
+        
+        const folderPath = await readline.question('Path for image folder: ');
+        readline.close()
+        const imageFolder = join(folderPath, 'images');
+        await mkdir(imageFolder);
 
-    const folderPath = await readline.question('Path for image folder: ');
-    readline.close()
-    const imageFolder = join(folderPath, 'images');
-    await mkdir(imageFolder);
 
+        let sequenceNumber = 1;
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
+        for(let url of urls) {
+            await page.goto(url);
+            const imgSrc = await page.$eval('.thumbnail img', img => img.src);
+            const bookName = await page.$eval('.col-sm-4 h1', h1 => h1.textContent);
+            const imgName = bookName.split('.')[0].replaceAll('"', '');
+            downloadImage(imgSrc, imgName, sequenceNumber, imageFolder);
+            console.log(`[${sequenceNumber}/${urls.length}] images downloaded!`)
+            sequenceNumber += 1;
+        }
+        await browser.close();
 
-    let sequenceNumber = 1;
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-    for(let url of urls) {
-        await page.goto(url);
-        const imgSrc = await page.$eval('.thumbnail img', img => img.src);
-        const bookName = await page.$eval('.col-sm-4 h1', h1 => h1.textContent);
-        const imgName = bookName.split('.')[0].replaceAll('"', '');
-        downloadImage(imgSrc, imgName, sequenceNumber, imageFolder);
-        sequenceNumber += 1;
+        console.log('All images are downloaded!');
+    } catch (error) {
+        console.log('ERROR', error);
+        await Browser.close();
     }
-    await browser.close();
-
-    console.log('Done!');
 })();
